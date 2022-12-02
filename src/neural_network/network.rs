@@ -54,4 +54,44 @@ impl Network {
             shape,
         }
     }
+
+    /// Feed forward the neural network
+    pub fn feed_forward(&mut self, input: Array1<f64>) {
+        // Set the input layer
+        self.neurons[0] = input;
+
+        // Feed forward
+        for i in 0..self.shape.len() - 1 {
+            // Modify the neurons in the next layer by multiplying the
+            // neurons in the current layer by the weights between the layers
+            // and adding the biases
+            // aₙ₊₁ = σ(wₙ₊₁ₙaₙ + bₙ₊₁) for each neuron in the next layer
+            self.neurons[i + 1] = (
+                self.neurons[i].dot(&self.weights[i]) 
+                + &self.biases[i]
+            ).mapv(self.activation);
+        }
+
+        // The output layer is now the result of the feed forward
+    }
+
+    /// Get outputs
+    pub fn get_outputs(&self) -> Array1<f64> {
+        self.neurons[self.shape.len() - 1].clone()
+    }
+
+    /// Find most activated output node index
+    pub fn get_highest_output(&self) -> usize {
+        let mut highest = 0;
+        let mut highest_value = 0.0;
+
+        for i in 0..self.shape[self.shape.len() - 1] {
+            if self.neurons[self.shape.len() - 1][i] > highest_value {
+                highest = i;
+                highest_value = self.neurons[self.shape.len() - 1][i];
+            }
+        }
+
+        highest
+    }
 }
