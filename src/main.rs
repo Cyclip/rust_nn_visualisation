@@ -8,10 +8,9 @@ fn main() {
     println!("{:#?}", network);
 
     let input = ndarray::arr1(&[1.0, 2.0]);
-    network.feed_forward(input);
-    println!("{:#?}", network);
 
-    // Print outputs
-    println!("\n\nOutputs: {:#?}", network.get_outputs());
-    println!("\nHighest output: {:#?}", network.get_highest_output());
+    // Backpropagation
+    let expected = ndarray::arr1(&[1.0]);
+    network.backpropagate(input, expected, 0.1);
+    println!("{:#?}", network);
 }
