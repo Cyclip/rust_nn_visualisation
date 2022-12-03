@@ -61,9 +61,9 @@ impl Network {
     }
 
     /// Feed forward the neural network
-    pub fn feed_forward(&mut self, input: Array1<f64>) {
+    pub fn feed_forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
         // Set the input layer
-        self.neurons[0] = input;
+        self.neurons[0] = input.clone();
 
         // Feed forward
         for i in 0..self.layers - 1 {
@@ -78,6 +78,7 @@ impl Network {
         }
 
         // The output layer is now the result of the feed forward
+        self.get_outputs()
     }
 
     /// Get outputs
@@ -116,7 +117,7 @@ impl Network {
     }
 
     /// MSE cost function
-    pub fn cost(&self, expected: Array1<f64>) -> f64 {
+    pub fn cost(&self, expected: &Array1<f64>) -> f64 {
         let mut cost = 0.0;
 
         for i in 0..self.shape[self.layers - 1] {
@@ -129,22 +130,33 @@ impl Network {
 
 /// Backpropagation implementation
 impl Network {
+    pub fn train(&mut self,
+        inputs: &Vec<Array1<f64>>,
+        expected: &Vec<Array1<f64>>,
+        learning_rate: f64,
+        epochs: usize,
+    ) {
+        for epoch in 0..epochs {
+            for i in 0..inputs.len() {
+                self.backpropagate(&inputs[i], &expected[i], learning_rate);
+            }
+            println!("Epoch: {}, Cost: {}", epoch + 1, self.cost(&expected[0]));
+        }
+    }
+    
     /// Backpropagation the network based on a single input to reduce the error
-    /// 
-    pub fn backpropagate(&mut self, input: Array1<f64>, target: Array1<f64>, learning_rate: f64) {
+    fn backpropagate(&mut self, input: &Array1<f64>, target: &Array1<f64>, learning_rate: f64) {
         // Feed forward
         self.feed_forward(input);
 
         // Calculate the error
         let errors = target - &self.neurons[self.layers - 1];
-        println!("Error: {:#?}", errors);
 
         // Calculate delta matrix
         // First entry is the error of the output layer
         // The rest are the errors of the hidden layers
         let mut deltas = Vec::new();
         deltas.push(errors * (self.neurons[self.layers - 1].mapv(self.activation_prime)));
-        println!("Delta: {:#?}", deltas);
 
         // Calculate the rest of the deltas in reverse order
         for i in (1..self.layers - 1).rev() {
@@ -152,19 +164,13 @@ impl Network {
             deltas.insert(0, delta);
         }
 
-        println!("Deltas: {:#?}", deltas);
-
         // Update the weights and biases
         for i in 0..self.layers - 1 {
-            // Weights
-            let w_change = self.neurons[i].to_owned().insert_axis(Axis(1)) * deltas[i].to_owned().insert_axis(Axis(0));
-            self.weights[i] = &self.weights[i] + w_change * learning_rate;
+            // Update the weights
+            self.weights[i] = &self.weights[i] + learning_rate * &self.neurons[i].insert_axis(Axis(1)).dot(&deltas[i].insert_axis(Axis(0)));
 
-            // Biases
-            self.biases[i] = &self.biases[i] + &deltas[i] * learning_rate;
+            // Update the biases
+            self.biases[i] = &self.biases[i] + learning_rate * &deltas[i];
         }
-
-        println!("Weights: {:#?}", self.weights);
-        println!("Biases: {:#?}", self.biases);
     }
 }
