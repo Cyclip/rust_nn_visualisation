@@ -23,5 +23,14 @@ pub fn sigmoid(x: f64) -> f64 {
 
 /// Derivative of the sigmoid function
 pub fn sigmoid_prime(x: f64) -> f64 {
-    sigmoid(x) * (1.0 - sigmoid(x))
+    x * (1.0 - x)
+}
+
+/// Mean Squared Error
+pub fn mse(output: &Array1<f64>, target: &Array1<f64>) -> f64 {
+    let mut sum = 0.0;
+    for i in 0..output.shape()[0] {
+        sum += (output[i] - target[i]).powi(2);
+    }
+    sum / output.shape()[0] as f64
 }
